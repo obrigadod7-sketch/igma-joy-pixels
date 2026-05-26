@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Send, Home, Users, Plus, MessageCircle, User, Loader2, Star } from 'lucide-react';
+import { ArrowLeft, Send, Home, Users, Plus, MessageCircle, User, Loader2, Star, Image as ImageIcon, Mic, MapPin, Square, X } from 'lucide-react';
 import { SEOHead } from '@/components/SEOHead';
 import { toast } from '@/hooks/use-toast';
 
@@ -18,6 +18,10 @@ type Message = {
   conversation_id: string;
   sender_id: string;
   content: string | null;
+  media_url: string | null;
+  media_type: string | null;
+  lat: number | null;
+  lng: number | null;
   created_at: string;
 };
 type Profile = {
@@ -125,18 +129,87 @@ export default function ServicosChat() {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages]);
 
+  const insertMessage = async (payload: Partial<Message>) => {
+    if (!me || !activeId) return;
+    const { error } = await supabase.from('svc_messages').insert({
+      conversation_id: activeId, sender_id: me, ...payload,
+    });
+    if (error) toast({ title: 'Erro ao enviar', description: error.message, variant: 'destructive' });
+    if (me) loadConversations(me);
+  };
+
   const send = async () => {
     if (!me || !activeId || !text.trim()) return;
     setSending(true);
     const content = text.trim();
     setText('');
-    const { error } = await supabase.from('svc_messages').insert({
-      conversation_id: activeId, sender_id: me, content,
-    });
-    if (error) toast({ title: 'Erro ao enviar', description: error.message, variant: 'destructive' });
+    await insertMessage({ content });
     setSending(false);
-    if (me) loadConversations(me);
   };
+
+  const uploadAndSend = async (file: Blob, mediaType: 'image' | 'audio', ext: string) => {
+    if (!me || !activeId) return;
+    setSending(true);
+    try {
+      const path = `${me}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+      const { error: upErr } = await supabase.storage.from('svc-chat').upload(path, file, {
+        contentType: file.type || (mediaType === 'image' ? 'image/jpeg' : 'audio/webm'),
+      });
+      if (upErr) throw upErr;
+      const { data } = supabase.storage.from('svc-chat').getPublicUrl(path);
+      await insertMessage({ media_url: data.publicUrl, media_type: mediaType });
+    } catch (err: any) {
+      toast({ title: 'Erro no upload', description: err.message, variant: 'destructive' });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  const onPickImage = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = '';
+    if (f) uploadAndSend(f, 'image', f.name.split('.').pop() ?? 'jpg');
+  };
+
+  // Audio recording
+  const mediaRecRef = useRef<MediaRecorder | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
+  const [recording, setRecording] = useState(false);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const rec = new MediaRecorder(stream);
+      chunksRef.current = [];
+      rec.ondataavailable = (e) => e.data.size > 0 && chunksRef.current.push(e.data);
+      rec.onstop = async () => {
+        stream.getTracks().forEach((t) => t.stop());
+        const blob = new Blob(chunksRef.current, { type: 'audio/webm' });
+        await uploadAndSend(blob, 'audio', 'webm');
+        setRecording(false);
+      };
+      rec.start();
+      mediaRecRef.current = rec;
+      setRecording(true);
+    } catch (err: any) {
+      toast({ title: 'Microfone bloqueado', description: err.message, variant: 'destructive' });
+    }
+  };
+
+  const stopRecording = () => mediaRecRef.current?.stop();
+
+  const sendLocation = () => {
+    if (!navigator.geolocation) {
+      toast({ title: 'Geolocalização não suportada', variant: 'destructive' });
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => insertMessage({ lat: pos.coords.latitude, lng: pos.coords.longitude, media_type: 'location' }),
+      (err) => toast({ title: 'Localização negada', description: err.message, variant: 'destructive' }),
+    );
+  };
+
+
 
   const otherUserId = (c: Conversation) => (c.user_a === me ? c.user_b : c.user_a);
   const activeConv = conversations.find((c) => c.id === activeId);
@@ -242,7 +315,26 @@ export default function ServicosChat() {
                       <div className={`max-w-[75%] px-3 py-2 rounded-2xl ${
                         mine ? 'bg-green-600 text-white rounded-br-sm' : 'bg-white border rounded-bl-sm'
                       }`}>
-                        <p className="text-sm whitespace-pre-wrap break-words">{m.content}</p>
+                        {m.media_type === 'image' && m.media_url && (
+                          <a href={m.media_url} target="_blank" rel="noreferrer">
+                            <img src={m.media_url} alt="" className="rounded-lg max-w-[240px] max-h-[240px] object-cover mb-1" />
+                          </a>
+                        )}
+                        {m.media_type === 'audio' && m.media_url && (
+                          <audio controls src={m.media_url} className="max-w-[240px]" />
+                        )}
+                        {m.media_type === 'location' && m.lat != null && m.lng != null && (
+                          <a
+                            href={`https://www.google.com/maps?q=${m.lat},${m.lng}`}
+                            target="_blank" rel="noreferrer"
+                            className={`flex items-center gap-1 text-sm underline ${mine ? 'text-white' : 'text-green-700'}`}
+                          >
+                            <MapPin className="w-4 h-4" /> Localização
+                          </a>
+                        )}
+                        {m.content && (
+                          <p className="text-sm whitespace-pre-wrap break-words">{m.content}</p>
+                        )}
                         <p className={`text-[10px] mt-0.5 ${mine ? 'text-green-100' : 'text-gray-400'}`}>
                           {new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         </p>
@@ -255,12 +347,45 @@ export default function ServicosChat() {
                 )}
               </div>
 
-              <form onSubmit={(e) => { e.preventDefault(); send(); }} className="p-3 border-t flex gap-2">
+              <form onSubmit={(e) => { e.preventDefault(); send(); }} className="p-3 border-t flex gap-2 items-center">
+                <label className="cursor-pointer text-gray-500 hover:text-green-600 p-2" title="Enviar foto">
+                  <ImageIcon className="w-5 h-5" />
+                  <input type="file" accept="image/*" className="hidden" onChange={onPickImage} disabled={sending} />
+                </label>
+                <button
+                  type="button"
+                  onClick={sendLocation}
+                  disabled={sending}
+                  title="Enviar localização"
+                  className="text-gray-500 hover:text-green-600 p-2"
+                >
+                  <MapPin className="w-5 h-5" />
+                </button>
+                {recording ? (
+                  <button
+                    type="button"
+                    onClick={stopRecording}
+                    title="Parar gravação"
+                    className="text-red-600 animate-pulse p-2"
+                  >
+                    <Square className="w-5 h-5 fill-red-600" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={startRecording}
+                    disabled={sending}
+                    title="Gravar áudio"
+                    className="text-gray-500 hover:text-green-600 p-2"
+                  >
+                    <Mic className="w-5 h-5" />
+                  </button>
+                )}
                 <Input
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  placeholder="Mensagem..."
-                  disabled={sending}
+                  placeholder={recording ? 'Gravando áudio...' : 'Mensagem...'}
+                  disabled={sending || recording}
                 />
                 <Button type="submit" disabled={sending || !text.trim()} className="bg-green-600 hover:bg-green-700">
                   {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
