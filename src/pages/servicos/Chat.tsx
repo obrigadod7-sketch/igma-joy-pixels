@@ -315,7 +315,26 @@ export default function ServicosChat() {
                       <div className={`max-w-[75%] px-3 py-2 rounded-2xl ${
                         mine ? 'bg-green-600 text-white rounded-br-sm' : 'bg-white border rounded-bl-sm'
                       }`}>
-                        <p className="text-sm whitespace-pre-wrap break-words">{m.content}</p>
+                        {m.media_type === 'image' && m.media_url && (
+                          <a href={m.media_url} target="_blank" rel="noreferrer">
+                            <img src={m.media_url} alt="" className="rounded-lg max-w-[240px] max-h-[240px] object-cover mb-1" />
+                          </a>
+                        )}
+                        {m.media_type === 'audio' && m.media_url && (
+                          <audio controls src={m.media_url} className="max-w-[240px]" />
+                        )}
+                        {m.media_type === 'location' && m.lat != null && m.lng != null && (
+                          <a
+                            href={`https://www.google.com/maps?q=${m.lat},${m.lng}`}
+                            target="_blank" rel="noreferrer"
+                            className={`flex items-center gap-1 text-sm underline ${mine ? 'text-white' : 'text-green-700'}`}
+                          >
+                            <MapPin className="w-4 h-4" /> Localização
+                          </a>
+                        )}
+                        {m.content && (
+                          <p className="text-sm whitespace-pre-wrap break-words">{m.content}</p>
+                        )}
                         <p className={`text-[10px] mt-0.5 ${mine ? 'text-green-100' : 'text-gray-400'}`}>
                           {new Date(m.created_at).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
                         </p>
@@ -328,12 +347,45 @@ export default function ServicosChat() {
                 )}
               </div>
 
-              <form onSubmit={(e) => { e.preventDefault(); send(); }} className="p-3 border-t flex gap-2">
+              <form onSubmit={(e) => { e.preventDefault(); send(); }} className="p-3 border-t flex gap-2 items-center">
+                <label className="cursor-pointer text-gray-500 hover:text-green-600 p-2" title="Enviar foto">
+                  <ImageIcon className="w-5 h-5" />
+                  <input type="file" accept="image/*" className="hidden" onChange={onPickImage} disabled={sending} />
+                </label>
+                <button
+                  type="button"
+                  onClick={sendLocation}
+                  disabled={sending}
+                  title="Enviar localização"
+                  className="text-gray-500 hover:text-green-600 p-2"
+                >
+                  <MapPin className="w-5 h-5" />
+                </button>
+                {recording ? (
+                  <button
+                    type="button"
+                    onClick={stopRecording}
+                    title="Parar gravação"
+                    className="text-red-600 animate-pulse p-2"
+                  >
+                    <Square className="w-5 h-5 fill-red-600" />
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={startRecording}
+                    disabled={sending}
+                    title="Gravar áudio"
+                    className="text-gray-500 hover:text-green-600 p-2"
+                  >
+                    <Mic className="w-5 h-5" />
+                  </button>
+                )}
                 <Input
                   value={text}
                   onChange={(e) => setText(e.target.value)}
-                  placeholder="Mensagem..."
-                  disabled={sending}
+                  placeholder={recording ? 'Gravando áudio...' : 'Mensagem...'}
+                  disabled={sending || recording}
                 />
                 <Button type="submit" disabled={sending || !text.trim()} className="bg-green-600 hover:bg-green-700">
                   {sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
