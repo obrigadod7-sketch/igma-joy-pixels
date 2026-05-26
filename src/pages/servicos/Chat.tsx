@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Send, Home, Users, Plus, MessageCircle, User, Loader2, Star } from 'lucide-react';
+import { ArrowLeft, Send, Home, Users, Plus, MessageCircle, User, Loader2, Star, Image as ImageIcon, Mic, MapPin, Square, X } from 'lucide-react';
 import { SEOHead } from '@/components/SEOHead';
 import { toast } from '@/hooks/use-toast';
 
