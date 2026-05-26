@@ -18,6 +18,10 @@ type Message = {
   conversation_id: string;
   sender_id: string;
   content: string | null;
+  media_url: string | null;
+  media_type: string | null;
+  lat: number | null;
+  lng: number | null;
   created_at: string;
 };
 type Profile = {
