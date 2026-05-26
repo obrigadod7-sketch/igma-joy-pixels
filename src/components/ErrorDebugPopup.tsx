@@ -409,6 +409,12 @@ export const ErrorDebugPopup: React.FC = () => {
     }
 
     window.dispatchEvent(new CustomEvent("lovable-debug-error", { detail: message }));
+    setText("");
+    setImages([]);
+    setFiles([]);
+    setAttachError(null);
+    setJustSent(true);
+    setTimeout(() => setJustSent(false), 2500);
   }, [text, images, files]);
 
   const onTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
