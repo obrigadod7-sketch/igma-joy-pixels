@@ -38,6 +38,7 @@ const App = () => (
       <Route path="/servicos" element={<ServicosLanding />} />
       <Route path="/servicos/auth" element={<ServicosAuth />} />
       <Route path="/servicos/home" element={<ServicosFeed />} />
+      <Route path="/servicos/chat" element={<ServicosChat />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
