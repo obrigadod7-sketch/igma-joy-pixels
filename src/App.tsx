@@ -15,6 +15,10 @@ import ServicosLanding from "./pages/servicos/Landing";
 import ServicosAuth from "./pages/servicos/Auth";
 import ServicosFeed from "./pages/servicos/Feed";
 import ServicosChat from "./pages/servicos/Chat";
+import ServicosOfertantes from "./pages/servicos/Ofertantes";
+import ServicosAssinatura from "./pages/servicos/Assinatura";
+import ServicosPerfil from "./pages/servicos/Perfil";
+import ServicosAdmin from "./pages/servicos/Admin";
 import { DebugErrorThrower } from "./components/DebugErrorThrower";
 import { ErrorDebugPopup } from "./components/ErrorDebugPopup";
 
@@ -39,6 +43,10 @@ const App = () => (
       <Route path="/servicos/auth" element={<ServicosAuth />} />
       <Route path="/servicos/home" element={<ServicosFeed />} />
       <Route path="/servicos/chat" element={<ServicosChat />} />
+      <Route path="/servicos/ofertantes" element={<ServicosOfertantes />} />
+      <Route path="/servicos/assinatura" element={<ServicosAssinatura />} />
+      <Route path="/servicos/perfil" element={<ServicosPerfil />} />
+      <Route path="/servicos/admin" element={<ServicosAdmin />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
