@@ -298,9 +298,15 @@ export default function SubscriptionPage() {
               <div className="rounded-xl border border-gray-200 p-4">
                 <div className="flex items-center gap-2 mb-3">
                   <MapPin size={16} className="text-gray-500" />
-                  <span className="text-sm">
-                    {user?.location?.address || '54 Avenue de New York 75016 Paris'}
-                  </span>
+                  <span className="text-sm flex-1">{currentAddress}</span>
+                  <button
+                    type="button"
+                    onClick={detectLocation}
+                    disabled={locating}
+                    className="text-xs text-orange-500 font-semibold hover:underline disabled:opacity-50"
+                  >
+                    {locating ? 'Buscando...' : 'Atualizar'}
+                  </button>
                 </div>
                 <div className="flex items-center gap-3">
                   <input
