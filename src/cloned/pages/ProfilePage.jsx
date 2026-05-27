@@ -1,4 +1,4 @@
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, useRef } from 'react';
 import { AuthContext } from '../ClonedAuthContext';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
