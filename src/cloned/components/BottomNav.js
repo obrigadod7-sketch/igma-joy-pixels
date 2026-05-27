@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, MessageCircle, Plus, User, Settings, Users, MapPin, Briefcase } from 'lucide-react';
-import { AuthContext } from '../App';
+import { AuthContext } from '../ClonedAuthContext';
 import { useTranslation } from 'react-i18next';
 
 export default function BottomNav() {
