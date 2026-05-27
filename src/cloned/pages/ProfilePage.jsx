@@ -9,6 +9,8 @@ import { User, Mail, Globe, LogOut, Edit, Check, Heart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { getOrCreateSvcProfile, updateSvcProfile } from '../lib/authProfile';
 
 const HELP_CATEGORIES = [
   { value: 'food', label: 'Alimentação', icon: '🍽️' },
@@ -24,7 +26,7 @@ const HELP_CATEGORIES = [
 ];
 
 export default function ProfilePage() {
-  const { user, logout, token, login } = useContext(AuthContext);
+  const { user, logout, refreshUser } = useContext(AuthContext);
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [showEditDialog, setShowEditDialog] = useState(false);
@@ -35,48 +37,34 @@ export default function ProfilePage() {
   const [savingCategories, setSavingCategories] = useState(false);
 
   useEffect(() => {
-    // Carregar categorias atuais do usuário
     fetchUserProfile();
-  }, []);
+    setDisplayName(user?.display_name || user?.name || '');
+  }, [user?.id]);
 
   const fetchUserProfile = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL || import.meta.env.VITE_BACKEND_URL || ""}/api/profile`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setSelectedCategories(data.help_categories || []);
-      }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+      const profile = await getOrCreateSvcProfile(session.user);
+      setSelectedCategories(profile?.categories || []);
+      setDisplayName(profile?.display_name || user?.name || '');
     } catch (error) {
       console.error('Error fetching profile:', error);
     }
   };
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
   const saveDisplayName = async () => {
     try {
-      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL || import.meta.env.VITE_BACKEND_URL || ""}/api/profile`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          display_name: displayName,
-          use_display_name: useDisplayName
-        })
-      });
-
-      if (response.ok) {
-        toast.success('Nome fictício atualizado!');
-        setShowEditDialog(false);
-        window.location.reload();
-      }
+      if (!user?.id) return;
+      await updateSvcProfile(user.id, { display_name: displayName });
+      await refreshUser?.();
+      toast.success('Nome fictício atualizado!');
+      setShowEditDialog(false);
     } catch (error) {
       toast.error('Erro ao atualizar');
     }
@@ -93,23 +81,11 @@ export default function ProfilePage() {
   const saveCategories = async () => {
     setSavingCategories(true);
     try {
-      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL || import.meta.env.VITE_BACKEND_URL || ""}/api/profile`, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          help_categories: selectedCategories
-        })
-      });
-
-      if (response.ok) {
-        toast.success('Categorias atualizadas!');
-        setShowCategoriesDialog(false);
-      } else {
-        toast.error('Erro ao salvar categorias');
-      }
+      if (!user?.id) return;
+      await updateSvcProfile(user.id, { categories: selectedCategories });
+      await refreshUser?.();
+      toast.success('Categorias atualizadas!');
+      setShowCategoriesDialog(false);
     } catch (error) {
       toast.error('Erro de conexão');
     } finally {
