@@ -1,4 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,6 +13,25 @@ serve(async (req) => {
   }
 
   try {
+    // Auth check
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+    const { data: userData, error: authErr } = await supabase.auth.getUser();
+    if (authErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const { topic, tone, platform } = await req.json();
 
     if (!topic || typeof topic !== "string" || topic.length < 3) {
@@ -51,14 +71,8 @@ Responda SEMPRE chamando a ferramenta generate_post.`;
                 parameters: {
                   type: "object",
                   properties: {
-                    caption: {
-                      type: "string",
-                      description: "Legenda envolvente (até 2200 caracteres). Use emojis com moderação.",
-                    },
-                    hashtags: {
-                      type: "string",
-                      description: "10 a 15 hashtags relevantes separadas por espaço, todas com #",
-                    },
+                    caption: { type: "string", description: "Legenda envolvente (até 2200 caracteres)." },
+                    hashtags: { type: "string", description: "10 a 15 hashtags relevantes separadas por espaço." },
                   },
                   required: ["caption", "hashtags"],
                   additionalProperties: false,
@@ -73,28 +87,21 @@ Responda SEMPRE chamando a ferramenta generate_post.`;
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Limite de uso atingido. Tente novamente em instantes." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
+        return new Response(JSON.stringify({ error: "Limite de uso atingido." }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
       if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "Créditos esgotados. Adicione fundos ao workspace." }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } },
-        );
+        return new Response(JSON.stringify({ error: "Créditos esgotados." }), {
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
       }
-      const t = await response.text();
-      console.error("AI gateway error:", response.status, t);
       throw new Error(`AI gateway error ${response.status}`);
     }
 
     const data = await response.json();
     const toolCall = data.choices?.[0]?.message?.tool_calls?.[0];
-    const args = toolCall?.function?.arguments
-      ? JSON.parse(toolCall.function.arguments)
-      : null;
-
+    const args = toolCall?.function?.arguments ? JSON.parse(toolCall.function.arguments) : null;
     if (!args) throw new Error("Resposta da IA sem conteúdo estruturado");
 
     return new Response(JSON.stringify(args), {
@@ -104,8 +111,7 @@ Responda SEMPRE chamando a ferramenta generate_post.`;
     console.error("generate-post-content error:", error);
     const msg = error instanceof Error ? error.message : "Erro desconhecido";
     return new Response(JSON.stringify({ error: msg }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
 });

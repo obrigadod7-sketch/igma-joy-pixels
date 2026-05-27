@@ -1,6 +1,6 @@
-// Generate a PIX "Copia e Cola" BR Code (EMVCo format) with CRC16-CCITT
-// Static QR for a fixed key/amount/txid.
+// Generate a PIX "Copia e Cola" BR Code (EMVCo) with CRC16-CCITT
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -8,10 +8,11 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "POST, OPTIONS",
 };
 
-// Defaults — override via env if desired
 const PIX_KEY = Deno.env.get("PIX_KEY") ?? "watizat@exemplo.com";
 const MERCHANT_NAME = (Deno.env.get("PIX_MERCHANT") ?? "WATIZAT JATAI").toUpperCase().slice(0, 25);
 const MERCHANT_CITY = (Deno.env.get("PIX_CITY") ?? "JATAI").toUpperCase().slice(0, 15);
+// Server-enforced amount; never trust client-provided value.
+const FIXED_AMOUNT = Number(Deno.env.get("SUB_AMOUNT") ?? "35.90");
 
 function tlv(id: string, value: string): string {
   const len = value.length.toString().padStart(2, "0");
@@ -30,9 +31,7 @@ function crc16(payload: string): string {
 }
 
 function buildBrcode(opts: { key: string; amount: number; txid: string }) {
-  const mai =
-    tlv("00", "br.gov.bcb.pix") +
-    tlv("01", opts.key);
+  const mai = tlv("00", "br.gov.bcb.pix") + tlv("01", opts.key);
   const addData = tlv("05", opts.txid.slice(0, 25));
   const payloadNoCrc =
     tlv("00", "01") +
@@ -52,8 +51,25 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
 
   try {
-    const { amount } = await req.json().catch(() => ({ amount: 35.9 }));
-    const value = Number(amount) > 0 ? Number(amount) : 35.9;
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "content-type": "application/json" },
+      });
+    }
+    const supabase = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_ANON_KEY")!,
+      { global: { headers: { Authorization: authHeader } } },
+    );
+    const { data: userData, error: authErr } = await supabase.auth.getUser();
+    if (authErr || !userData?.user) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401, headers: { ...corsHeaders, "content-type": "application/json" },
+      });
+    }
+
+    const value = FIXED_AMOUNT;
     const txid = `WTZ${Date.now()}`.slice(0, 25);
     const brcode = buildBrcode({ key: PIX_KEY, amount: value, txid });
 
@@ -63,8 +79,7 @@ Deno.serve(async (req) => {
     );
   } catch (e) {
     return new Response(JSON.stringify({ error: (e as Error).message }), {
-      status: 500,
-      headers: { ...corsHeaders, "content-type": "application/json" },
+      status: 500, headers: { ...corsHeaders, "content-type": "application/json" },
     });
   }
 });
