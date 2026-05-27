@@ -41,21 +41,10 @@ export function ClonedAuthProvider({ children }) {
 
     const profile = await getOrCreateSvcProfile(session.user);
     const normalized = normalizeAuthUser(session.user, profile);
-    // Verify admin via server-side user_roles table (not client-trusted svc_profiles.role)
-    try {
-      const { data: roles } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', session.user.id);
-      normalized.isAdmin = (roles ?? []).some((r) => r.role === 'admin');
-    } catch {
-      normalized.isAdmin = false;
-    }
     setUser(normalized);
     setToken(session.access_token || null);
     if (session.access_token) localStorage.setItem('token', session.access_token);
     return normalized;
-
   };
 
   useEffect(() => {
@@ -143,9 +132,8 @@ export function clonedRoutes(user) {
     <Route key="cloned-ofertantes" path="/servicos/ofertantes" element={<VolunteersPage />} />,
     <Route key="cloned-profile" path="/profile" element={<ProfilePage />} />,
     <Route key="cloned-servicos-profile" path="/servicos/perfil" element={<ProfilePage />} />,
-    <Route key="cloned-admin" path="/admin" element={user?.isAdmin ? <AdminDashboard /> : <Navigate to="/home" />} />,
-    <Route key="cloned-servicos-admin" path="/servicos/admin" element={user?.isAdmin ? <AdminDashboard /> : <Navigate to="/home" />} />,
-
+    <Route key="cloned-admin" path="/admin" element={user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/home" />} />,
+    <Route key="cloned-servicos-admin" path="/servicos/admin" element={user?.role === 'admin' ? <AdminDashboard /> : <Navigate to="/home" />} />,
     <Route key="cloned-direct-chat" path="/direct-chat/:userId" element={<DirectChatPage />} />,
     <Route key="cloned-volunteers" path="/volunteers" element={<VolunteersPage />} />,
     <Route key="cloned-jobs" path="/jobs" element={<JobsPage />} />,
