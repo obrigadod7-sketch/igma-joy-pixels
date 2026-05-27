@@ -25,6 +25,7 @@ export const getOrCreateSvcProfile = async (authUser, fallback = {}) => {
     .from('svc_profiles')
     .select('*')
     .eq('user_id', authUser.id)
+    .limit(1)
     .maybeSingle();
 
   if (selectError) throw selectError;
@@ -56,6 +57,7 @@ export const updateSvcProfile = async (userId, values) => {
     .from('svc_profiles')
     .update(values)
     .eq('user_id', userId)
+    .limit(1)
     .select('*')
     .single();
 
