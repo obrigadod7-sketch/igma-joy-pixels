@@ -22,15 +22,15 @@ const SIDEBAR = [
   {
     section: 'Meu perímetro de intervenção',
     items: [
-      { label: 'Ver as demandas', icon: ClipboardList, key: 'demandas' },
-      { label: 'Gerenciar meu perímetro', icon: MapPin, key: 'perimetro', active: true },
+      { label: 'Ver as demandas', icon: ClipboardList, key: 'demandas', route: '/home' },
+      { label: 'Gerenciar meu perímetro', icon: MapPin, key: 'perimetro' },
     ],
   },
   {
     section: 'Minha visibilidade',
     items: [
-      { label: 'Ver minha página de perfil', icon: Eye, key: 'view-profile' },
-      { label: 'Modificar minha página de perfil', icon: Edit2, key: 'edit-profile' },
+      { label: 'Ver minha página de perfil', icon: Eye, key: 'view-profile', route: '/profile' },
+      { label: 'Modificar minha página de perfil', icon: Edit2, key: 'edit-profile', route: '/profile?edit=1' },
       { label: 'Gerenciar meus comentários', icon: Star, key: 'reviews' },
       { label: 'Meu referenciamento Google', icon: Globe, key: 'seo' },
       { label: 'Meus suportes de comunicação', icon: MessageSquare, key: 'support' },
@@ -50,6 +50,13 @@ const SIDEBAR = [
     ],
   },
 ];
+
+const ITEM_LABEL = Object.fromEntries(
+  SIDEBAR.flatMap((s) => s.items.map((i) => [i.key, i.label]))
+);
+const PRO_KEYS = new Set(
+  SIDEBAR.filter((s) => s.pro).flatMap((s) => s.items.map((i) => i.key))
+);
 
 export default function SubscriptionPage() {
   const { user, token } = useContext(AuthContext);
@@ -184,7 +191,14 @@ export default function SubscriptionPage() {
                       <button
                         key={it.key}
                         data-testid={`sub-item-${it.key}`}
-                        onClick={() => setActiveItem(it.key)}
+                        onClick={() => {
+                          setActiveItem(it.key);
+                          if (it.route) {
+                            navigate(it.route);
+                          } else if (PRO_KEYS.has(it.key) && !subStatus?.active) {
+                            toast.info(`${it.label} — disponível no plano PRO`);
+                          }
+                        }}
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm text-left transition ${
                           isActive ? 'bg-orange-50 text-orange-600 font-semibold' : 'text-gray-700 hover:bg-gray-50'
                         }`}
@@ -201,9 +215,26 @@ export default function SubscriptionPage() {
           </div>
         </aside>
 
+
         {/* CENTER PANEL */}
         <main className="col-span-12 md:col-span-6">
           <div className="bg-white rounded-2xl border border-gray-200 p-6 md:p-8" data-testid="sub-center-panel">
+            <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">{ITEM_LABEL[activeItem] || 'Assinatura'}</h2>
+            {activeItem !== 'perimetro' && (
+              <div className="text-sm text-gray-600">
+                {PRO_KEYS.has(activeItem) && !subStatus?.active ? (
+                  <div className="rounded-xl border border-dashed border-orange-300 bg-orange-50 p-4">
+                    Este recurso faz parte do plano <strong>PRO</strong>. Assine para desbloquear.
+                  </div>
+                ) : (
+                  <div className="rounded-xl border border-gray-200 p-4">
+                    Em breve: <strong>{ITEM_LABEL[activeItem]}</strong>.
+                  </div>
+                )}
+              </div>
+            )}
+            {activeItem === 'perimetro' && (<>
+
             <h2 className="text-xl md:text-2xl font-bold text-gray-900 mb-6">Gerenciar meu perímetro</h2>
 
             <div className="mb-6">
@@ -263,8 +294,10 @@ export default function SubscriptionPage() {
             >
               Modificar meu perímetro
             </Button>
+            </>)}
           </div>
         </main>
+
 
         {/* RIGHT: UPGRADE CARD */}
         <aside className="col-span-12 md:col-span-3">
