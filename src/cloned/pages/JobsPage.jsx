@@ -147,7 +147,7 @@ export default function JobsPage() {
   useEffect(() => {
     fetchJobs();
     // Buscar vagas externas na inicialização
-    searchExternalJobs('emploi', 'France');
+    searchExternalJobs('emprego', 'Brasil');
   }, []);
 
   useEffect(() => {
