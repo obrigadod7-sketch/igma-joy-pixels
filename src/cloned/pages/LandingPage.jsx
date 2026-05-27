@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../components/ui/button';
-import { Search, Wrench, MapPin, Star } from 'lucide-react';
+import { Search, Briefcase, MapPin, Star } from 'lucide-react';
 import i18n from '../i18n';
 import AuthModal from '../components/AuthModal';
+import goiasTrabalhoImg from '@/assets/goias-trabalho.jpg';
 
 export default function LandingPage() {
   const navigate = useNavigate();
