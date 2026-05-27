@@ -7,6 +7,8 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { toast } from 'sonner';
 import { ArrowLeft, Check, User, Heart, Shield, MapPin, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { getOrCreateSvcProfile, normalizeAuthUser } from '../lib/authProfile';
 
 const HELP_CATEGORIES = [
   { value: 'food', label: 'Alimentação', icon: '🍽️', desc: 'Distribuição de alimentos, refeições' },
@@ -174,48 +176,42 @@ export default function AuthPage() {
     setLoading(true);
 
     try {
-      const endpoint = isLogin ? '/api/auth/login' : '/api/auth/register';
-      const body = isLogin 
-        ? { email, password }
-        : { 
-            email, 
-            password, 
-            name, 
-            role, 
-            languages: ['pt', 'fr'],
-            ...(role === 'migrant' && {
-              need_categories: selectedCategories
-            }),
-            ...(role === 'helper' && {
-              help_categories: selectedCategories,
-              location: location ? { ...location, address: locationAddress } : null,
-              show_location: showLocation
-            }),
-            ...(role === 'volunteer' && {
-              professional_area: professionalArea,
-              professional_specialties: specialties.split(',').map(s => s.trim()).filter(Boolean),
-              availability,
-              experience
-            })
-          };
-
-      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL || import.meta.env.VITE_BACKEND_URL || ""}${endpoint}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body)
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        login(data.token, data.user);
-        toast.success(isLogin ? 'Login bem-sucedido!' : 'Conta criada com sucesso!');
-        navigate('/home');
+      if (isLogin) {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        const profile = await getOrCreateSvcProfile(data.user);
+        await login(data.session?.access_token, normalizeAuthUser(data.user, profile));
+        toast.success('Login bem-sucedido!');
+        navigate('/home', { replace: true });
       } else {
-        toast.error(data.detail || 'Erro ao autenticar');
+        const { data, error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/home`,
+            data: { display_name: name, role, location: locationAddress },
+          },
+        });
+        if (error) throw error;
+
+        if (data.session) {
+          const profile = await getOrCreateSvcProfile(data.user, {
+            display_name: name,
+            role,
+            city: locationAddress,
+            categories: selectedCategories,
+          });
+          await login(data.session.access_token, normalizeAuthUser(data.user, profile));
+          toast.success('Conta criada com sucesso!');
+          navigate('/home', { replace: true });
+        } else {
+          toast.success('Verifique seu email para confirmar a conta');
+          setIsLogin(true);
+          setStep(1);
+        }
       }
     } catch (error) {
-      toast.error('Erro de conexão');
+      toast.error(error.message || 'Erro ao autenticar');
     } finally {
       setLoading(false);
     }
