@@ -88,7 +88,7 @@ function App() {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout, refreshUser }}>
       <BrowserRouter>
         <Routes>
           <Route path="/" element={!user ? <LandingPage /> : <Navigate to="/home" />} />
