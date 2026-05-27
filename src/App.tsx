@@ -26,7 +26,7 @@ import { ClonedAuthProvider, clonedRoutes } from "./cloned/ClonedRoutes";
 import { AuthContext as ClonedAuthContext } from "./cloned/ClonedAuthContext";
 
 const AppRoutes = () => {
-  const { user } = useContext(ClonedAuthContext);
+  const { user } = useContext(ClonedAuthContext) as { user: { role?: string } | null };
 
   return (
     <Routes>
