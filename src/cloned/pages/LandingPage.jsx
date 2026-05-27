@@ -35,8 +35,8 @@ export default function LandingPage() {
             </div>
             <div className="flex flex-col">
               <span className="text-xl font-bold">
-                <span className="text-green-500">Wati</span>
-                <span className="text-orange-500">zat</span>
+                <span className="text-green-500">PertoDeMim</span>
+                <span className="text-orange-500">Servicos</span>
               </span>
               <span className="text-[10px] text-gray-500 uppercase tracking-wide">Trabalho em Goiás</span>
             </div>
