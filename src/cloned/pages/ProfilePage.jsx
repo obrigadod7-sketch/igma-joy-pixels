@@ -449,20 +449,48 @@ export default function ProfilePage() {
           <div className="bg-white rounded-3xl p-6 shadow-card" data-testid="tab-photos">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-bold text-textPrimary">Minhas fotos</h3>
-              <Button size="sm" className="rounded-full bg-primary hover:bg-primary-hover">
-                <Camera size={16} className="mr-1" /> Adicionar
+              <Button
+                size="sm"
+                disabled={uploadingPhoto}
+                onClick={() => photoInputRef.current?.click()}
+                className="rounded-full bg-primary hover:bg-primary-hover"
+              >
+                <Camera size={16} className="mr-1" />
+                {uploadingPhoto ? 'Enviando...' : 'Adicionar'}
               </Button>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handlePhotoUpload}
+              />
             </div>
-            <div className="grid grid-cols-3 gap-3">
-              {[0,1,2,3,4,5].map(i => (
-                <div key={i} className="aspect-square rounded-xl bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-gray-400">
-                  <Camera size={24} />
+            {photos.length > 0 ? (
+              <div className="grid grid-cols-3 gap-3">
+                {photos.map(p => (
+                  <div key={p.name} className="group relative aspect-square rounded-xl overflow-hidden bg-gray-100">
+                    <img src={p.url} alt="" className="w-full h-full object-cover" />
+                    <button
+                      onClick={() => deletePhoto(p.name)}
+                      className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white text-xs opacity-0 group-hover:opacity-100 transition"
+                      title="Remover"
+                    >
+                      ×
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-10">
+                <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Camera size={22} className="text-primary" />
                 </div>
-              ))}
-            </div>
-            <p className="text-center text-textMuted text-sm mt-6">
-              Você ainda não publicou fotos. Clique em "Adicionar" para começar.
-            </p>
+                <p className="text-sm text-textMuted">
+                  Você ainda não publicou fotos. Clique em "Adicionar" para começar.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
