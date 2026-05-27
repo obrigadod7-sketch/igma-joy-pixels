@@ -72,6 +72,74 @@ export default function DirectChatPage() {
   const [payDescription, setPayDescription] = useState('');
   const [pixCharge, setPixCharge] = useState(null); // {brcode, qr_code_base64}
   const [loadingAction, setLoadingAction] = useState(false);
+  const [ratingValue, setRatingValue] = useState(0);
+  const [ratingNote, setRatingNote] = useState('');
+
+  // ====== Local conversation flags (pinned/archived/blocked) ======
+  const convKey = userId || 'unknown';
+  const readFlag = (k) => {
+    try { return JSON.parse(localStorage.getItem(`dc:${k}`) || '{}'); } catch { return {}; }
+  };
+  const writeFlag = (k, obj) => localStorage.setItem(`dc:${k}`, JSON.stringify(obj));
+  const [pinnedMap, setPinnedMap] = useState(() => readFlag('pinned'));
+  const [archivedMap, setArchivedMap] = useState(() => readFlag('archived'));
+  const [blockedMap, setBlockedMap] = useState(() => readFlag('blocked'));
+  const isPinned = !!pinnedMap[convKey];
+  const isArchived = !!archivedMap[convKey];
+  const isBlocked = !!blockedMap[convKey];
+
+  const togglePin = () => {
+    const next = { ...pinnedMap, [convKey]: !isPinned };
+    if (!next[convKey]) delete next[convKey];
+    setPinnedMap(next); writeFlag('pinned', next);
+    toast.success(isPinned ? 'Conversa desafixada' : 'Conversa fixada');
+    setActiveModal(null);
+  };
+  const toggleArchive = () => {
+    const next = { ...archivedMap, [convKey]: !isArchived };
+    if (!next[convKey]) delete next[convKey];
+    setArchivedMap(next); writeFlag('archived', next);
+    toast.success(isArchived ? 'Conversa desarquivada' : 'Conversa arquivada');
+    setActiveModal(null);
+  };
+  const toggleBlock = () => {
+    const next = { ...blockedMap, [convKey]: !isBlocked };
+    if (!next[convKey]) delete next[convKey];
+    setBlockedMap(next); writeFlag('blocked', next);
+    if (!isBlocked) { setCanChat(false); setChatRestrictionReason('Você bloqueou este usuário.'); }
+    else { setCanChat(true); setChatRestrictionReason(''); }
+    toast.warning(isBlocked ? 'Usuário desbloqueado' : 'Usuário bloqueado');
+    setActiveModal(null);
+  };
+  const handleReport = () => {
+    const reports = readFlag('reports');
+    reports[convKey] = { at: new Date().toISOString() };
+    writeFlag('reports', reports);
+    toast.warning('Usuário reportado. Nossa equipe vai analisar.');
+    setActiveModal(null);
+  };
+  const handleShareConversation = async () => {
+    const url = `${window.location.origin}/direct-chat/${userId}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Conversa', url });
+      } else {
+        await navigator.clipboard.writeText(url);
+        toast.success('Link copiado!');
+      }
+    } catch { /* user cancelled */ }
+    setActiveModal(null);
+  };
+  const openRating = () => { setRatingValue(0); setRatingNote(''); setActiveModal('rate'); };
+  const submitRating = async () => {
+    if (!ratingValue) { toast.error('Selecione uma nota'); return; }
+    try {
+      await sendSystemMessage(`⭐ Avaliação: ${ratingValue}/5${ratingNote ? `\n📝 ${ratingNote}` : ''}`);
+      toast.success('Avaliação enviada!');
+    } catch { toast.error('Erro ao avaliar'); }
+    setActiveModal(null);
+  };
+
 
   // ====== Action handlers ======
   const handleRefuse = async () => {
