@@ -247,7 +247,7 @@ export default function HousingPage() {
           {/* Logo and Search */}
           <div className="flex items-center justify-between gap-4">
             <button onClick={() => navigate('/home')} className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-gradient-to-r from-rose-500 to-pink-500 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-gradient-to-r from-orange-500 to-orange-600 rounded-lg flex items-center justify-center">
                 <Home size={18} className="text-white" />
               </div>
               <span className="font-bold text-xl hidden sm:block text-rose-500">Watizat</span>
@@ -335,7 +335,7 @@ export default function HousingPage() {
       </div>
 
       {/* Stats Banner */}
-      <div className="bg-gradient-to-r from-rose-50 to-pink-50 border-b">
+      <div className="bg-gradient-to-r from-orange-50 to-orange-100 border-b">
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex justify-center gap-8 sm:gap-16">
             <div className="text-center">
@@ -428,7 +428,7 @@ export default function HousingPage() {
 
                   {/* Duration Badge */}
                   {listing.duration === 'exchange' && (
-                    <div className="absolute bottom-3 left-3 px-3 py-1.5 bg-purple-500 text-white rounded-full text-xs font-bold">
+                    <div className="absolute bottom-3 left-3 px-3 py-1.5 bg-orange-500 text-white rounded-full text-xs font-bold">
                       🤝 House Sitting
                     </div>
                   )}
@@ -495,7 +495,7 @@ export default function HousingPage() {
       {/* Floating Action Button - Mobile */}
       <button
         onClick={() => setShowCreateModal(true)}
-        className="fixed bottom-24 right-4 w-14 h-14 bg-gradient-to-r from-rose-500 to-pink-500 text-white rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform z-40 sm:hidden"
+        className="fixed bottom-24 right-4 w-14 h-14 bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-full shadow-lg flex items-center justify-center hover:scale-110 transition-transform z-40 sm:hidden"
       >
         <Plus size={28} />
       </button>
@@ -584,16 +584,16 @@ export default function HousingPage() {
 
                 {/* Availability Calendar */}
                 {(selectedListing.available_from || selectedListing.available_until) && (
-                  <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-200">
+                  <div className="mb-6 p-4 bg-orange-50 rounded-xl border border-orange-200">
                     <h3 className="font-semibold mb-3 flex items-center gap-2">
-                      <Calendar size={18} className="text-blue-600" />
+                      <Calendar size={18} className="text-orange-600" />
                       {t('availability')}
                     </h3>
                     <div className="flex items-center gap-4">
                       {selectedListing.available_from && (
                         <div className="flex-1 p-3 bg-white rounded-lg text-center">
                           <p className="text-xs text-gray-500 mb-1">{t('from')}</p>
-                          <p className="font-semibold text-blue-600">
+                          <p className="font-semibold text-orange-600">
                             {new Date(selectedListing.available_from).toLocaleDateString('pt-BR', {
                               day: 'numeric',
                               month: 'short',
@@ -607,7 +607,7 @@ export default function HousingPage() {
                           <ChevronRight className="text-gray-400" />
                           <div className="flex-1 p-3 bg-white rounded-lg text-center">
                             <p className="text-xs text-gray-500 mb-1">{t('until')}</p>
-                            <p className="font-semibold text-blue-600">
+                            <p className="font-semibold text-orange-600">
                               {new Date(selectedListing.available_until).toLocaleDateString('pt-BR', {
                                 day: 'numeric',
                                 month: 'short',
@@ -629,7 +629,7 @@ export default function HousingPage() {
 
                 {/* Exchange Services */}
                 {selectedListing.exchange_services && (
-                  <div className="mb-6 p-4 bg-purple-50 rounded-xl border border-purple-200">
+                  <div className="mb-6 p-4 bg-orange-50 rounded-xl border border-orange-200">
                     <h3 className="font-semibold mb-2 flex items-center gap-2">
                       🤝 {t('exchangeServices')}
                     </h3>
@@ -667,13 +667,13 @@ export default function HousingPage() {
                 {/* Host Info */}
                 <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl mb-6">
                   <div className="flex items-center gap-4">
-                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-rose-400 to-pink-500 flex items-center justify-center">
+                    <div className="w-14 h-14 rounded-full bg-gradient-to-br from-orange-400 to-orange-500 flex items-center justify-center">
                       <User size={28} className="text-white" />
                     </div>
                     <div>
                       <p className="font-semibold">{selectedListing.user?.name || 'Host'}</p>
                       <div className="flex items-center gap-2 text-sm text-gray-500">
-                        <BadgeCheck size={14} className="text-blue-500" />
+                        <BadgeCheck size={14} className="text-orange-500" />
                         <span>{t('verified')}</span>
                       </div>
                     </div>
@@ -749,10 +749,10 @@ export default function HousingPage() {
                       setListingType('offer');
                       setNewListing(prev => ({...prev, duration: 'exchange'}));
                     }}
-                    className="w-full p-6 rounded-2xl border-2 border-gray-200 hover:border-purple-400 hover:bg-purple-50 transition-all text-left group"
+                    className="w-full p-6 rounded-2xl border-2 border-gray-200 hover:border-orange-400 hover:bg-orange-50 transition-all text-left group"
                   >
                     <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-purple-400 to-indigo-500 flex items-center justify-center group-hover:scale-110 transition-transform">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-orange-400 to-orange-600 flex items-center justify-center group-hover:scale-110 transition-transform">
                         <Heart size={32} className="text-white" />
                       </div>
                       <div className="flex-1">
